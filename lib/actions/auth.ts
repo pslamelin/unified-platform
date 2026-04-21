@@ -2,6 +2,7 @@
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { createClient } from '@supabase/supabase-js';
 
 // 1. REGISTER NEW USER
 export async function registerUserAction(formData: any) {
@@ -75,4 +76,33 @@ export async function updateUserAction(formData: any) {
 
   revalidatePath('/settings/user-management');
   return { success: true };
+}
+
+// Add this right to the bottom of the file
+export async function resetUserPasswordAction(userId: string, newPassword: string) {
+  try {
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY! 
+    );
+
+    // 1. Force update the user's secure Auth password in Supabase
+    const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(userId, { 
+      password: newPassword 
+    });
+
+    if (authError) return { error: authError.message };
+
+    // 2. Set the flag in the profiles table to trigger the Security Interceptor
+    const { error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .update({ requires_password_change: true })
+      .eq('id', userId);
+
+    if (profileError) return { error: profileError.message };
+
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message };
+  }
 }

@@ -457,7 +457,7 @@ export default function POSPage() {
                           <div className="p-3 text-xs text-slate-500 text-center">No clients found</div>
                         ) : (
                           filteredCustomerSearch.map(c => (
-                            <button key={c.id} onClick={() => selectCustomer(c)} className="w-full text-left px-4 py-2 hover:bg-slate-50 transition-colors flex flex-col border-b border-slate-50 last:border-0">
+                            <button key={c.id} onMouseDown={(e) => { e.preventDefault(); selectCustomer(c); }} className="w-full text-left px-4 py-2 hover:bg-slate-50 transition-colors flex flex-col border-b border-slate-50 last:border-0">
                               <span className="text-sm font-bold text-slate-900 flex items-center gap-2">
                                 {c.full_name} 
                                 {c.is_walk_in && <span className="text-[9px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">DEFAULT</span>}
@@ -718,35 +718,47 @@ export default function POSPage() {
       {isAddCustomerOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 print:hidden">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100 mx-4">
-            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 bg-slate-50/50">
-              <h3 className="text-base sm:text-lg font-bold text-slate-900">Quick Add Client</h3>
-              <button onClick={() => setIsAddCustomerOpen(false)} className="p-1 text-slate-400 hover:bg-slate-200 rounded-lg transition-colors">Close</button>
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-100 bg-slate-50/50">
+              <div>
+                <h3 className="text-base sm:text-lg font-bold text-slate-900">Add New Client</h3>
+              </div>
+              <button type="button" onClick={() => setIsAddCustomerOpen(false)} className="p-1 text-slate-400 hover:text-slate-900 hover:bg-slate-200 rounded-lg transition-colors">
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <form onSubmit={handleQuickAddCustomer} className="p-4 sm:p-5 space-y-4">
+            <form onSubmit={handleQuickAddCustomer} className="p-4 sm:p-6 space-y-4 sm:space-y-5 max-h-[70vh] overflow-y-auto">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5 sm:col-span-2">
-                  <label className="text-[10px] sm:text-xs font-bold text-slate-700 uppercase tracking-wide">Full Name <span className="text-rose-500">*</span></label>
-                  <input autoComplete="off" type="text" required disabled={isCreatingCustomer} value={newCustomerForm.fullName} onChange={e => setNewCustomerForm({...newCustomerForm, fullName: e.target.value})} className="w-full px-3 h-[42px] bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 text-sm" placeholder="e.g. Maria Clara" />
+                  <label className="text-xs sm:text-sm font-medium text-slate-700">Full Name <span className="text-rose-500">*</span></label>
+                  <input autoComplete="off" type="text" required disabled={isCreatingCustomer} value={newCustomerForm.fullName} onChange={e => setNewCustomerForm({...newCustomerForm, fullName: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:outline-none text-sm" placeholder="e.g. Maria Clara" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] sm:text-xs font-bold text-slate-700 uppercase tracking-wide">Status</label>
-                  <select disabled={isCreatingCustomer} value={newCustomerForm.status} onChange={e => setNewCustomerForm({...newCustomerForm, status: e.target.value})} className="w-full px-3 h-[42px] bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 text-sm outline-none"><option value="Active">Active</option><option value="VIP">VIP</option></select>
+                  <label className="text-xs sm:text-sm font-medium text-slate-700">Status</label>
+                  <select disabled={isCreatingCustomer} value={newCustomerForm.status} onChange={e => setNewCustomerForm({...newCustomerForm, status: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:outline-none text-sm appearance-none"><option value="Active">Active</option><option value="VIP">VIP</option></select>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] sm:text-xs font-bold text-slate-700 uppercase tracking-wide">Phone</label>
-                  <input autoComplete="off" type="tel" disabled={isCreatingCustomer} value={newCustomerForm.phone} onChange={e => setNewCustomerForm({...newCustomerForm, phone: e.target.value})} className="w-full px-3 h-[42px] bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 text-sm" placeholder="0917..." />
+                  <label className="text-xs sm:text-sm font-medium text-slate-700">Phone Number</label>
+                  <input autoComplete="off" type="tel" disabled={isCreatingCustomer} value={newCustomerForm.phone} onChange={e => setNewCustomerForm({...newCustomerForm, phone: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:outline-none text-sm" placeholder="0917..." />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] sm:text-xs font-bold text-slate-700 uppercase tracking-wide">Email</label>
-                  <input autoComplete="off" type="email" disabled={isCreatingCustomer} value={newCustomerForm.email} onChange={e => setNewCustomerForm({...newCustomerForm, email: e.target.value})} className="w-full px-3 h-[42px] bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 text-sm" placeholder="Optional" />
+                  <label className="text-xs sm:text-sm font-medium text-slate-700">Email Address</label>
+                  <input autoComplete="off" type="email" disabled={isCreatingCustomer} value={newCustomerForm.email} onChange={e => setNewCustomerForm({...newCustomerForm, email: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:outline-none text-sm" placeholder="maria@example.com" />
                 </div>
               </div>
-              <div className="pt-2 flex justify-end gap-3 border-t border-slate-100">
+              <div className="space-y-1.5">
+                <label className="text-xs sm:text-sm font-medium text-slate-700">Address</label>
+                <input autoComplete="off" type="text" disabled={isCreatingCustomer} value={newCustomerForm.address} onChange={e => setNewCustomerForm({...newCustomerForm, address: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:outline-none text-sm" placeholder="123 Main St, Quezon City" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs sm:text-sm font-medium text-slate-700">Preferences / Notes</label>
+                <textarea disabled={isCreatingCustomer} value={newCustomerForm.notes} onChange={e => setNewCustomerForm({...newCustomerForm, notes: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:outline-none text-sm resize-none" placeholder="Allergies, preferred therapist, etc." rows={3}></textarea>
+              </div>
+              <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
                 <button type="button" onClick={() => setIsAddCustomerOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
                 <button type="submit" disabled={isCreatingCustomer} className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
-                  {isCreatingCustomer ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Add
+                  {isCreatingCustomer ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Save Client
                 </button>
               </div>
             </form>

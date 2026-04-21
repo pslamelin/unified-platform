@@ -66,9 +66,9 @@ export default function LoginPage() {
       if (["super admin", "manager"].includes(safeRole)) {
         router.push('/');
       } else if (safeRole === "distributor") {
-        router.push("/distributor/kiosk"); // NEW: Distributors go straight to their Kiosk!
+        router.push("/distributor/kiosk"); 
       } else if (["staff", "cashier"].includes(safeRole)) {
-        router.push("/pos"); // Staff go to POS
+        router.push("/pos"); 
       } else {
         await supabase.auth.signOut();
         toast({ type: "error", message: "Account does not have an active system role." });
@@ -86,7 +86,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-stone-50 p-4 sm:p-8 font-sans antialiased">
+    // UPDATED: Added flex-col so the copyright text stacks neatly below the card
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-stone-50 p-4 sm:p-8 font-sans antialiased">
       
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-stone-100 overflow-hidden transition-all">
         
@@ -184,6 +185,14 @@ export default function LoginPage() {
           </form>
         </div>
       </div>
+
+      {/* NEW: Copyright Footer */}
+      <div className="mt-8 text-center animate-in fade-in duration-500">
+        <p className="text-xs font-semibold text-stone-400 tracking-wide">
+          &copy; {new Date().getFullYear()} Prettyskin - Lamelin. All rights reserved.
+        </p>
+      </div>
+
     </div>
   );
 }
