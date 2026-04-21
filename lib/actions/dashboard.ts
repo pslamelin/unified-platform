@@ -51,7 +51,7 @@ export async function getDashboardMetricsAction(selectedMonth: number, selectedY
       .from('inventory_items')
       .select('id, sku, name, current_quantity, low_stock_threshold, category');
 
-    let lowStockAlerts = [];
+    let lowStockAlerts: any[] = [];
     if (inventory) {
       lowStockAlerts = inventory.filter(item => {
         const isService = item.category?.includes("Service") || item.category?.includes("Treatment") || item.category === "Packages";
