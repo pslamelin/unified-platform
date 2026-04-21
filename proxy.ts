@@ -1,7 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Notice this is now called "proxy" instead of "middleware"
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -26,6 +25,7 @@ export async function proxy(request: NextRequest) {
 
   // Define which routes require authentication
   const isProtected = 
+    request.nextUrl.pathname === '/' || // <-- WE ADDED THE DASHBOARD HERE!
     request.nextUrl.pathname.startsWith('/inventory') ||
     request.nextUrl.pathname.startsWith('/pos') ||
     request.nextUrl.pathname.startsWith('/settings') ||
@@ -39,7 +39,6 @@ export async function proxy(request: NextRequest) {
 
   // 2. Handle authenticated users
   if (user) {
-    // Check their enterprise profile
     const { data: profile } = await supabase
       .from('profiles')
       .select('requires_password_change, role')
@@ -55,13 +54,13 @@ export async function proxy(request: NextRequest) {
 
     // Protect the update-password route from users who don't need it
     if (!needsChange && request.nextUrl.pathname === '/update-password') {
-      const destination = profile?.role === 'Cashier' ? '/pos' : '/inventory';
+      const destination = profile?.role === 'Cashier' ? '/pos' : '/';
       return NextResponse.redirect(new URL(destination, request.url));
     }
     
     // Redirect logged-in users away from the login screen
     if (request.nextUrl.pathname === '/login') {
-      const destination = profile?.role === 'Cashier' ? '/pos' : '/inventory';
+      const destination = profile?.role === 'Cashier' ? '/pos' : '/';
       return NextResponse.redirect(new URL(destination, request.url));
     }
   }
