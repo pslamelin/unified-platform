@@ -1,7 +1,8 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-export async function middleware(request: NextRequest) {
+// Notice this is now called "proxy" instead of "middleware"
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -68,7 +69,7 @@ export async function middleware(request: NextRequest) {
   return supabaseResponse;
 }
 
-// Only run middleware on app routes (ignore static files and images)
+// Only run the proxy on app routes (ignore static files and images)
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 };
