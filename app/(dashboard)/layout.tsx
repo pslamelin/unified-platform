@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, ShoppingCart, Users, Settings, LogOut, ChevronDown, AlertTriangle, Package, ReceiptText, FileText, ArrowDownRight, ShoppingBag } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Users, Settings, LogOut, ChevronDown, AlertTriangle, Package, ReceiptText, FileText, ArrowDownRight, ShoppingBag, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -24,6 +24,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // NEW MOBILE STATE
   
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
     "System Settings": true 
@@ -143,15 +144,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen flex font-sans antialiased bg-stone-50 text-neutral-900 w-full relative">
+    <div className="min-h-screen flex font-sans antialiased bg-stone-50 text-neutral-900 w-full relative overflow-hidden">
       
-      <aside className="w-72 bg-white flex flex-col border-r border-stone-200 shadow-sm z-20 overflow-y-auto shrink-0">
-        <div className="p-6 border-b border-stone-100 shrink-0 flex items-center justify-center">
+      {/* MOBILE OVERLAY */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-stone-900/40 z-40 md:hidden backdrop-blur-sm"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* SIDEBAR */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-72 bg-white flex flex-col border-r border-stone-200 
+        shadow-2xl md:shadow-sm overflow-y-auto shrink-0 transition-transform duration-300 ease-in-out
+        md:relative md:translate-x-0 ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
+      `}>
+        <div className="p-6 border-b border-stone-100 shrink-0 flex items-center justify-between md:justify-center">
           <div className="flex items-center justify-center gap-5 h-10 w-full">
             <img src="/PrettySkinLogo.png" alt="Pretty Skin" className="h-full w-auto object-contain" />
             <div className="h-6 w-px bg-stone-200 shrink-0"></div>
             <img src="/LamelinLogo.png" alt="Lamelin" className="h-full w-auto object-contain" />
           </div>
+          {/* Mobile close button */}
+          <button className="md:hidden p-1 text-stone-400 hover:bg-stone-100 rounded-full" onClick={() => setIsMobileMenuOpen(false)}>
+            <X className="w-5 h-5" />
+          </button>
         </div>
         
         <div className="flex-1 py-6 space-y-8">
@@ -166,7 +184,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   const isAccordion = !!item.subItems && item.subItems.length > 0;
                   const isOpen = openMenus[item.title];
                   
-                  // FIXED: The strictly accurate active path check!
                   const isActiveDirect = !isAccordion && (
                     item.href === "/" 
                       ? pathname === "/" 
@@ -194,7 +211,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 return (
                                   <Link 
                                     key={subItem.title} 
-                                    href={subItem.href} 
+                                    href={subItem.href}
+                                    onClick={() => setIsMobileMenuOpen(false)} 
                                     className={`flex items-center px-4 py-2.5 rounded-lg text-sm transition-all font-medium ${isSubActive ? 'bg-stone-100 text-stone-900 font-bold' : 'text-stone-500 hover:text-stone-900 hover:bg-stone-50'}`}
                                   >
                                     {subItem.title}
@@ -206,7 +224,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         </>
                       ) : (
                         <Link 
-                          href={item.href!} 
+                          href={item.href!}
+                          onClick={() => setIsMobileMenuOpen(false)} 
                           className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm transition-all font-medium ${isActiveDirect ? 'bg-stone-900 text-white shadow-lg' : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'}`}
                         >
                           <Icon className={`w-5 h-5 ${isActiveDirect ? "text-stone-300" : "text-stone-400"}`} />
@@ -224,28 +243,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <main className="flex-1 flex flex-col h-screen overflow-hidden min-w-0">
         
-        <header className="h-20 bg-white border-b border-stone-200 flex items-center justify-between px-10 shrink-0 z-50">
-          <div className="flex flex-col">
-            <h1 className="text-xl font-bold text-stone-900 tracking-tight leading-tight">
-              {time.getHours() < 12 ? "Good morning" : time.getHours() < 17 ? "Good afternoon" : "Good evening"}, {userName}
-            </h1>
-            <div className="text-[11px] font-bold text-stone-400 uppercase tracking-widest flex gap-2 mt-1">
-              <span>{time.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}</span>
-              <span>•</span>
-              <span className="text-stone-900 font-black">[{time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}]</span>
+        {/* RESPONSIVE HEADER */}
+        <header className="h-16 sm:h-20 bg-white border-b border-stone-200 flex items-center justify-between px-4 sm:px-10 shrink-0 z-30">
+          
+          <div className="flex items-center gap-2 sm:gap-0 min-w-0">
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="md:hidden p-2 -ml-2 text-stone-600 hover:bg-stone-100 rounded-lg transition-colors shrink-0"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div className="flex flex-col min-w-0">
+              <h1 className="text-base sm:text-xl font-bold text-stone-900 tracking-tight leading-tight truncate">
+                {time.getHours() < 12 ? "Good morning" : time.getHours() < 17 ? "Good afternoon" : "Good evening"}, <span className="hidden sm:inline">{userName}</span>
+              </h1>
+              <div className="hidden sm:flex text-[11px] font-bold text-stone-400 uppercase tracking-widest gap-2 mt-1">
+                <span>{time.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                <span>•</span>
+                <span className="text-stone-900 font-black">[{time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}]</span>
+              </div>
             </div>
           </div>
 
-          <div className="relative">
+          <div className="relative shrink-0 ml-2">
             <button 
               onClick={() => setIsDropdownOpen(!isDropdownOpen)} 
-              className="flex items-center gap-3 hover:bg-stone-50 p-2 pr-4 rounded-full border border-stone-100 transition-all shadow-sm"
+              className="flex items-center gap-2 sm:gap-3 hover:bg-stone-50 p-1.5 sm:p-2 sm:pr-4 rounded-full border border-stone-100 transition-all shadow-sm"
             >
-              <div className="w-9 h-9 rounded-full bg-stone-900 flex items-center justify-center shadow-md">
-                <span className="text-white font-bold text-sm">{userName.charAt(0)}</span>
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-stone-900 flex items-center justify-center shadow-md">
+                <span className="text-white font-bold text-xs sm:text-sm">{userName.charAt(0)}</span>
               </div>
-              <span className="text-sm font-bold text-stone-700">{userName}</span>
-              <ChevronDown className="w-4 h-4 text-stone-400" />
+              <span className="hidden sm:inline text-sm font-bold text-stone-700">{userName}</span>
+              <ChevronDown className="hidden sm:block w-4 h-4 text-stone-400" />
             </button>
 
             {isDropdownOpen && (
@@ -253,7 +282,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div className="fixed inset-0 z-30" onClick={() => setIsDropdownOpen(false)} />
                 <div className="absolute right-0 mt-3 w-52 bg-white border border-stone-200 shadow-2xl rounded-2xl py-2 z-40 animate-in fade-in slide-in-from-top-2">
                   <div className="px-5 py-3 border-b border-stone-100">
-                    <p className="text-sm font-bold text-stone-900">{userName}</p>
+                    <p className="text-sm font-bold text-stone-900 truncate">{userName}</p>
                     <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">{userRole || "Loading..."}</p>
                   </div>
                   <div className="p-1.5">
@@ -271,7 +300,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
         
         <div className="flex-1 overflow-auto bg-stone-50/50 relative z-0">
-          <div className="p-10 w-full h-full">
+          <div className="p-4 sm:p-10 w-full h-full">
             {children}
           </div>
         </div>
@@ -280,7 +309,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {isSignOutModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-900/60 backdrop-blur-md p-4">
           <div className="absolute inset-0" onClick={() => setIsSignOutModalOpen(false)} />
-          <div className="relative bg-white rounded-[2.5rem] shadow-2xl p-10 max-w-sm w-full text-center border border-white">
+          <div className="relative bg-white rounded-[2.5rem] shadow-2xl p-8 sm:p-10 max-w-sm w-full text-center border border-white">
             <div className="w-20 h-20 rounded-full bg-rose-50 flex items-center justify-center mb-6 mx-auto">
               <AlertTriangle className="w-10 h-10 text-rose-600" />
             </div>
