@@ -64,7 +64,7 @@ export default function LoginPage() {
 
       // 3. Bulletproof Routing Logic
       if (["super admin", "manager"].includes(safeRole)) {
-        router.push("/inventory"); // Admins go to Inventory
+        router.push('/');
       } else if (safeRole === "distributor") {
         router.push("/distributor/kiosk"); // NEW: Distributors go straight to their Kiosk!
       } else if (["staff", "cashier"].includes(safeRole)) {
