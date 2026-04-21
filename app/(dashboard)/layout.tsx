@@ -255,7 +255,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </button>
             <div className="flex flex-col min-w-0">
               <h1 className="text-base sm:text-xl font-bold text-stone-900 tracking-tight leading-tight truncate">
-                {time.getHours() < 12 ? "Good morning" : time.getHours() < 17 ? "Good afternoon" : "Good evening"}, <span className="hidden sm:inline">{userName}</span>
+                {time.getHours() < 12 ? "Good morning" : time.getHours() < 17 ? "Good afternoon" : "Good evening"}, {userName}
               </h1>
               <div className="hidden sm:flex text-[11px] font-bold text-stone-400 uppercase tracking-widest gap-2 mt-1">
                 <span>{time.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}</span>
