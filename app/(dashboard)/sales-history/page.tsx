@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Loader2, Eye, Clock, Package, CheckCircle2, XCircle, FileText, TrendingUp, Truck, AlertCircle, Download } from "lucide-react";
+import { Search, Loader2, Eye, Clock, Package, CheckCircle2, XCircle, FileText, TrendingUp, Truck, AlertCircle, Download, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { createBrowserClient } from "@supabase/ssr";
 
@@ -24,6 +24,10 @@ export default function SalesHistoryDashboard() {
   // View Modal State
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  
+  // NEW: Cancel Modal State
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [cancelRemarks, setCancelRemarks] = useState("");
 
   const fetchOrders = async () => {
     setIsFetching(true);
@@ -62,16 +66,25 @@ export default function SalesHistoryDashboard() {
   const totalPages = Math.max(1, Math.ceil(filteredOrders.length / itemsPerPage));
   const paginatedOrders = filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  // --- UPGRADED INVENTORY DEDUCTION LOGIC ---
-  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+  // --- UPGRADED STATUS LOGIC WITH REMARKS ---
+  const handleUpdateStatus = async (orderId: string, newStatus: string, remarks?: string) => {
     setIsLoading(true);
     try {
       const oldStatus = selectedOrder?.status;
+      
+      let updatePayload: any = { status: newStatus };
+      let updatedNotes = selectedOrder?.notes || "";
+
+      // Append cancellation remarks to the order notes
+      if (newStatus === 'Cancelled' && remarks) {
+        updatedNotes = updatedNotes ? `${updatedNotes}\n\n[CANCELLATION REASON]: ${remarks}` : `[CANCELLATION REASON]: ${remarks}`;
+        updatePayload.notes = updatedNotes;
+      }
 
       // 1. Update the order status in the database
       const { error } = await supabase
         .from('b2b_orders')
-        .update({ status: newStatus })
+        .update(updatePayload)
         .eq('id', orderId);
 
       if (error) throw error;
@@ -133,8 +146,14 @@ export default function SalesHistoryDashboard() {
       toast({ type: "success", message: `Order status updated to ${newStatus}` });
       
       // Update local state instantly
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-      if (selectedOrder) setSelectedOrder({ ...selectedOrder, status: newStatus });
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus, notes: updatedNotes } : o));
+      if (selectedOrder) setSelectedOrder({ ...selectedOrder, status: newStatus, notes: updatedNotes });
+      
+      // Clean up modal state
+      if (newStatus === 'Cancelled') {
+        setIsCancelModalOpen(false);
+        setCancelRemarks("");
+      }
       
     } catch (err: any) {
       toast({ type: "error", message: err.message || "Failed to update order status." });
@@ -143,7 +162,12 @@ export default function SalesHistoryDashboard() {
     }
   };
 
-  // --- NEW: EXPORT TO CSV ---
+  const confirmCancellation = () => {
+    if (!cancelRemarks.trim()) return;
+    handleUpdateStatus(selectedOrder.id, 'Cancelled', cancelRemarks);
+  };
+
+  // --- EXPORT TO CSV ---
   const handleExportCSV = () => {
     const headers = ["PO Number", "Date", "Distributor", "Status", "Total Amount"];
     const rows = filteredOrders.map(o => [
@@ -193,7 +217,6 @@ export default function SalesHistoryDashboard() {
           <p className="text-[13px] text-slate-500 mt-0.5">Review incoming Purchase Orders, pack boxes, and track wholesale revenue.</p>
         </div>
         
-        {/* EXPORT BUTTON MOVED HERE */}
         <button onClick={handleExportCSV} className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm font-semibold shadow-sm">
           <Download className="w-4 h-4 text-slate-500" /> Export B2B Data
         </button>
@@ -328,7 +351,13 @@ export default function SalesHistoryDashboard() {
                   <button onClick={() => handleUpdateStatus(selectedOrder.id, 'Completed')} disabled={isLoading || selectedOrder.status === 'Completed'} className="py-2 text-[11px] font-bold rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 transition-colors flex items-center justify-center gap-1"><CheckCircle2 className="w-3 h-3"/> Complete</button>
                 </div>
                 {selectedOrder.status !== 'Cancelled' && (
-                  <button onClick={() => handleUpdateStatus(selectedOrder.id, 'Cancelled')} disabled={isLoading} className="mt-1 py-1.5 text-[10px] font-bold text-rose-500 hover:bg-rose-50 rounded transition-colors w-full">Cancel Order</button>
+                  <button 
+                    onClick={() => setIsCancelModalOpen(true)} 
+                    disabled={isLoading} 
+                    className="mt-1 py-1.5 text-[10px] font-bold text-rose-500 hover:bg-rose-50 rounded transition-colors w-full"
+                  >
+                    Cancel Order
+                  </button>
                 )}
               </div>
             </div>
@@ -374,6 +403,60 @@ export default function SalesHistoryDashboard() {
               <span className="text-3xl font-black text-slate-900 tracking-tight">₱{Number(selectedOrder.total_amount).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* --- CANCEL ORDER CONFIRMATION MODAL --- */}
+      {isCancelModalOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-rose-50/50">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-rose-500" />
+                <h3 className="text-base font-bold text-slate-900">Cancel Purchase Order</h3>
+              </div>
+              <button 
+                onClick={() => { setIsCancelModalOpen(false); setCancelRemarks(""); }} 
+                className="p-1 text-slate-400 hover:bg-slate-200 rounded-lg transition-colors"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-slate-600">
+                You are about to cancel <span className="font-bold text-slate-900">{selectedOrder?.po_number}</span>. Please provide a reason. This will be permanently appended to the order notes for the distributor to see.
+              </p>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Cancellation Remarks <span className="text-rose-500">*</span></label>
+                <textarea 
+                  required
+                  value={cancelRemarks}
+                  onChange={(e) => setCancelRemarks(e.target.value)}
+                  placeholder="e.g. Stock unavailable, payment failed..."
+                  className="w-full p-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all text-sm resize-none"
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button 
+                  onClick={() => { setIsCancelModalOpen(false); setCancelRemarks(""); }} 
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition-colors text-sm"
+                >
+                  Keep Order
+                </button>
+                <button 
+                  onClick={confirmCancellation}
+                  disabled={isLoading || !cancelRemarks.trim()}
+                  className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm Cancellation"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

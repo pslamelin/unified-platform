@@ -154,9 +154,9 @@ export default function MainDashboard() {
 
           {/* Scrollable Container for Chart on Mobile */}
           <div className="w-full overflow-x-auto pb-2 -mx-2 px-2 sm:mx-0 sm:px-0">
-            <div className="min-w-[600px] flex-1 flex items-end justify-between gap-1 h-64 mt-auto relative px-2 z-10">
+            {/* UPDATED: Increased height and padding so the new tooltip fits perfectly inside the bounds */}
+            <div className="min-w-[600px] flex-1 flex items-end justify-between gap-1 h-[280px] mt-auto relative px-2 z-10">
               
-              {/* Background Grid Lines (Hidden on super small screens to save space) */}
               <div className="hidden sm:flex absolute inset-0 flex-col justify-between border-b border-stone-200 pb-8 pointer-events-none z-0">
                 <div className="border-t border-stone-100 w-full flex items-start"><span className="text-[9px] font-mono text-stone-300 -mt-2 bg-white pr-2">₱{maxChartValue.toLocaleString()}</span></div>
                 <div className="border-t border-stone-100 w-full flex items-start"><span className="text-[9px] font-mono text-stone-300 -mt-2 bg-white pr-2">₱{(maxChartValue * 0.75).toLocaleString()}</span></div>
@@ -170,12 +170,21 @@ export default function MainDashboard() {
                 const hasData = day.total > 0;
                 
                 return (
-                  <div key={i} className="flex flex-col items-center justify-end flex-1 group z-10 relative h-full pt-8">
+                  // UPDATED: Added pt-16 so the tooltip rests inside the wrapper instead of popping outside
+                  <div key={i} className="flex flex-col items-center justify-end flex-1 group z-10 relative h-full pt-16">
                     {hasData && (
-                      <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity text-center pointer-events-none z-50">
-                        <p className="text-[10px] font-bold text-stone-900 bg-white shadow-lg rounded px-2 py-1 whitespace-nowrap border border-stone-100">
-                          ₱{day.total.toLocaleString()}
-                        </p>
+                      <div className="absolute top-1 opacity-0 group-hover:opacity-100 transition-all duration-200 text-center pointer-events-none z-[100] flex flex-col items-center translate-y-2 group-hover:translate-y-0">
+                        <div className="bg-stone-900 text-white shadow-xl rounded-lg px-3 py-2 whitespace-nowrap text-center border border-stone-800">
+                          <p className="text-xs font-black tracking-tight">₱{day.total.toLocaleString()}</p>
+                          {(day.retail > 0 || day.b2b > 0) && (
+                            <div className="flex items-center justify-center gap-2 mt-1 text-[9px] font-bold uppercase tracking-wider">
+                              {day.retail > 0 && <span className="text-blue-400">R: ₱{day.retail.toLocaleString()}</span>}
+                              {day.b2b > 0 && <span className="text-purple-400">B: ₱{day.b2b.toLocaleString()}</span>}
+                            </div>
+                          )}
+                        </div>
+                        {/* Downward pointing arrow */}
+                        <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[5px] border-t-stone-900"></div>
                       </div>
                     )}
                     
